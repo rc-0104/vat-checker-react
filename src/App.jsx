@@ -1,29 +1,48 @@
 import {useEffect, useState} from 'react'
 import './App.css'
-import {checkVAT, countries} from "jsvat";
+import axios from "axios";
+
+
+const getVatNumberInfos = async (countryCode, vatNumber) => {
+    try {
+        const vatZohoCatalystUrl = `https://apivatchecker-785528922.development.catalystserverless.com/server/api_vat_checker_function/vatchecker?countrycode=${countryCode}&vatnumber=${vatNumber}`;
+        let config = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: vatZohoCatalystUrl,
+        };
+
+        return (await axios.request(config)).data;
+
+    } catch (e) {
+        console.error(e.message);
+    }
+}
 
 const CountryCodes = Object.freeze({
     Belgium: "BE",
     France: "FR",
     Germany: "DE",
 })
+
 function App() {
     const [vatInfos, setVatInfos] = useState({
         code: CountryCodes.Belgium,
         number: "0478971548"
     })
 
+    const [vatResponse, setVatResponse] = useState({});
+
     const [vatNumber, setVatNumber] = useState("0478971548");
     const [countryCode, setCountryCode] = useState(CountryCodes.Belgium);
 
-    const handleSubmitForm = (e) => {
+    const handleSubmitForm = async (e) => {
         e.preventDefault();
         try {
-            // const validationInfo = await validateVat(vatInfos.code, vatInfos.number);
-            const vat = `${vatInfos.code}${vatInfos.number}`;
-            const validationInfo = checkVAT(vat, countries);
-            console.log("validation response : " , {validationInfo})
-            alert(JSON.stringify(validationInfo, null, 2));
+            const response = await getVatNumberInfos(vatInfos.code, vatInfos.number);
+            const responseData = response.data;
+            console.info({ responseData })
+            setVatResponse(responseData);
         } catch (e) {
             console.log(e);
         }
@@ -52,6 +71,7 @@ function App() {
                 </div>
             </div>
             <p><b>Vat infos : </b> { JSON.stringify(vatInfos, null, 2) }</p>
+            <p><b>Response : </b> { JSON.stringify(vatResponse, null, 2) }</p>
             <button type={'submit'}>Verify</button>
         </form>
     </>
